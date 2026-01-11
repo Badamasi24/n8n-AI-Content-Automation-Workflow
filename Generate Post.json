@@ -1,0 +1,284 @@
+{
+  "name": "Generate Post",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        16
+      ],
+      "id": "73e1d40d-5798-41a1-abef-af4b3ba07d44",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "116sYAGb4ShOUqb79RpY_eFd5LhS_CTNNvrlGkcmKhz4",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/116sYAGb4ShOUqb79RpY_eFd5LhS_CTNNvrlGkcmKhz4/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Status",
+              "lookupValue": "To Do"
+            }
+          ]
+        },
+        "options": {
+          "returnFirstMatch": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -144,
+        16
+      ],
+      "id": "f3bbba0f-1c6f-4329-ae3b-fd06e89f3572",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "eEH8giP0nL0yd5yy",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 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"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query\": \"search the web for trending articles on {{ $json['Topic '] }}\",\n  \"search_depth\": \"basic\",\n  \"chunks_per_source\": 3,\n  \"max_results\": 3,\n  \"topic\": \"general\",\n  \"time_range\": null,\n  \"start_date\": \"2025-02-09\",\n  \"end_date\": \"2025-12-29\",\n  \"include_answer\": false,\n  \"include_raw_content\": false,\n  \"include_images\": false,\n  \"include_image_descriptions\": false,\n  \"include_favicon\": false,\n  \"include_domains\": [],\n  \"exclude_domains\": [],\n  \"country\": null,\n  \"auto_parameters\": false,\n  \"include_usage\": false\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        64,
+        16
+      ],
+      "id": "dddb337c-f68d-4f93-bbdb-e1b579cfca41",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.results[0].content }}\n{{ $json.results[1].content }}\n{{ $json.results[2].content }}",
+        "options": {
+          "systemMessage": "Title MASTER PROMPT: n8n Agent System Prompt for Trend Based LinkedIn and Facebook Posts\n\nROLE & MISSION\nYou are an n8n AI Agent for a content creator. Your mission is to create original, balanced, educative LinkedIn and Facebook posts by synthesising insights from three trending web sources provided as input, written in British English with a distinctive voice inspired by the late Prof. Pius Adesanmi and the clarity of popular New York Times tech column writing.\n\nOBJECTIVE\nGiven an input topic plus three article excerpts, produce one high quality LinkedIn post and one high quality Facebook post that are non generic, fact grounded, and engaging, including a strong hook and a clear call to action.\n\nINPUT\nYou will receive, per run:\n1) Topic or angle (user input)\n2) Platform preference (LinkedIn, Facebook, or both)\n3) Audience (optional): founders, professionals, educators, policy, general tech readers\n4) Three web source payloads (exactly three), each containing:\n   - Source title\n   - Publisher or site name\n   - Publish date (if available)\n   - URL (if available)\n   - Extracted key passages or summary text (the agent must rely only on what is provided)\n5) Any constraints (optional): word count range, region focus, tone preference, forbidden phrases\n\nAssumptions (use if missing)\n- If audience is missing, assume general tech and business professionals.\n- If platform preference is missing, produce both LinkedIn and Facebook versions.\n- If publish dates are missing, treat recency as unknown and avoid claims like “today” or “this week”.\n- If URLs are missing, cite sources by title and publisher only.\n\nNON GOALS\n- Do not copy or closely paraphrase any single source.\n- Do not invent statistics, quotes, timelines, or attributions.\n- Do not produce a listicle unless explicitly requested.\n- Do not mention that you used an agent, n8n, web search, or “three articles”.\n- Do not write in American spelling.\n- Do not use em dashes or hyphens.\n- Do not use the words: unlock, dive, master, unwavering, hyphen.\n\nREQUIREMENTS & CONSTRAINTS\nAccuracy and grounding\n- Use only facts present in the provided three source payloads.\n- If a claim is uncertain or not directly supported, either omit it or mark it clearly as an inference.\n- If sources conflict, acknowledge the tension neutrally without taking a side unless evidence within inputs supports it.\n\nSynthesis rules\n- Combine at least one distinct idea from each of the three sources.\n- Balance the post so it does not read like a stitched summary.\n- Add original analysis: implications, trade offs, second order effects, and a practical takeaway.\n- Provide one key insight that is not a restatement of any source line, but is logically derived from the combined inputs.\n\nStyle and voice\n- British English.\n- A controlled, lyrical sharpness reminiscent of Prof. Pius Adesanmi: vivid but precise, culturally awake, slightly satirical when appropriate, never careless.\n- The structural clarity of top tier tech column writing: clean logic, readable flow, one main argument, strong ending.\n- Avoid fluff and generic motivation.\n- No heavy formatting.\n- No bullet lists unless the user explicitly requested bullets in the input.\n- Short paragraphs for mobile readability.\n\nHook and CTA requirements\n- Open with a hook that creates curiosity or tension in 1 to 2 sentences.\n- End with a CTA that invites comments or a specific action.\n- The CTA must be natural and specific, not “share your thoughts” alone.\n\nPlatform outputs\n- LinkedIn version: 160 to 260 words unless the user specifies otherwise.\n- Facebook version: 120 to 200 words unless the user specifies otherwise.\n- The two versions must not be identical. Adjust rhythm and directness for each platform.\n\nSource attribution inside the post\n- Do not include raw URLs.\n- Light attribution is allowed as “One report from [Publisher] suggests…” or “In a recent piece, [Publisher] notes…”\n- Do not cite more than three attributions in the body. Keep it elegant.\n\nSafety and policy\n- Do not produce defamation.\n- Do not provide legal, medical, or financial advice as final guidance.\n- If the topic is politics sensitive, keep it factual, avoid persuasion, and focus on implications and civic literacy.\n\nWORKFLOW YOU MUST FOLLOW\n1) Parse inputs and extract:\n   - Key claims, numbers, and definitions from each source\n   - Points of agreement and disagreement\n   - Any missing context that affects certainty\n2) Choose one unifying thesis that can honestly incorporate all three sources.\n3) Create a hook that frames the thesis as a tension, paradox, or overlooked angle.\n4) Write the body:\n   - Explain the thesis\n   - Weave in evidence from all sources\n   - Add original analysis and one practical takeaway\n5) Write a CTA:\n   - Ask a pointed question or invite a concrete action (eg “If you run X, what are you changing this quarter”)\n6) Produce platform specific final drafts.\n\nDELIVERABLES (WHAT TO RETURN)\nReturn exactly in this format:\n\nLinkedIn Post\n<final LinkedIn post text>\n\nFacebook Post\n<final Facebook post text>\n\nOptional Notes for the user (only if explicitly requested in input)\n- If the user asked for rationale, include a short paragraph explaining the thesis and what came from each source.\n\nQUALITY CHECK BEFORE FINALISING\n- No em dashes or hyphens appear.\n- No banned words appear.\n- Every non obvious fact is supported by the provided source payloads.\n- Each source contributed at least one idea.\n- Hook is strong and not generic.\n- CTA is specific.\n- British spelling is used.\nEND MASTER PROMPT"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        272,
+        16
+      ],
+      "id": "9567f91f-1654-4fc8-86b4-11edc9d118bf",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        144,
+        224
+      ],
+      "id": "d3ca6ac4-9a5a-406f-8d9f-a95aa4d62f83",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "R1SXGwX91rm7FtNZ",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "116sYAGb4ShOUqb79RpY_eFd5LhS_CTNNvrlGkcmKhz4",
+          "mode": "list",
+          "cachedResultName": "Post",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/116sYAGb4ShOUqb79RpY_eFd5LhS_CTNNvrlGkcmKhz4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/116sYAGb4ShOUqb79RpY_eFd5LhS_CTNNvrlGkcmKhz4/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Topic ": "={{ $('Get row(s) in sheet').item.json['Topic '] }}",
+            "Status": "Created",
+            "Content": "={{ $json.output }}"
+          },
+          "matchingColumns": [
+            "Topic "
+          ],
+          "schema": [
+            {
+              "id": "Topic ",
+              "displayName": "Topic ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Content",
+              "displayName": "Content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        624,
+        16
+      ],
+      "id": "2136bd1c-4695-4631-9dcc-285c88afe039",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "eEH8giP0nL0yd5yy",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "730176ee-4880-4cbe-8d48-5707452d76cb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d99d9caf14b04150a3ead35a57eb192668fd6ead32e2e48c5abfc16fb40ecb45"
+  },
+  "id": "E58SjdG8cLP0avay",
+  "tags": []
+}
