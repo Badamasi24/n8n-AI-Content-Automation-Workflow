@@ -56,10 +56,6 @@ Marketing content workflows
 
 AI-assisted writing pipelines
 
-📂 Repository Structure
-├── workflow.json        # Exported n8n workflow
-├── README.md            # Project documentation
-
 🔧 Setup Instructions
 
 Clone this repository
